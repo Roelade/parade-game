@@ -44,6 +44,27 @@ let obstacleSprite = null;
 const canvas = document.getElementById('gameCanvas');
 const ctx = canvas.getContext('2d');
 
+// Pas canvas grootte aan aan scherm
+function resizeCanvas() {
+    const container = document.getElementById('gameContainer');
+    const containerWidth = container.clientWidth;
+    const containerHeight = container.clientHeight;
+    
+    // Behoud aspect ratio (2:1)
+    const aspectRatio = 2;
+    let width = containerWidth;
+    let height = width / aspectRatio;
+    
+    // Als de hoogte te groot is, pas dan de breedte aan
+    if (height > containerHeight * 0.7) {
+        height = containerHeight * 0.7;
+        width = height * aspectRatio;
+    }
+    
+    canvas.style.width = width + 'px';
+    canvas.style.height = height + 'px';
+}
+
 // Laad sprites
 function loadImages() {
     // Laad speler afbeelding
@@ -213,7 +234,7 @@ function drawStartScreen() {
     
     // Teken instructies
     ctx.font = '20px "Press Start 2P"';
-    ctx.fillText('Druk op SPATIE om te beginnen', canvas.width/2, canvas.height/2 + 50);
+    ctx.fillText('Tik op het scherm om te beginnen', canvas.width/2, canvas.height/2 + 50);
 }
 
 // Game loop
@@ -234,15 +255,15 @@ function gameLoop() {
     }
     
     // Update speler
-    if (keys.ArrowLeft) {
+    if (keys.ArrowLeft || keys.leftBtn) {
         player.x -= PLAYER_SPEED;
         player.direction = -1;
     }
-    if (keys.ArrowRight) {
+    if (keys.ArrowRight || keys.rightBtn) {
         player.x += PLAYER_SPEED;
         player.direction = 1;
     }
-    if (keys.ArrowUp && !player.isJumping) {
+    if ((keys.ArrowUp || keys.jumpBtn) && !player.isJumping) {
         player.velocityY = JUMP_FORCE;
         player.isJumping = true;
     }
@@ -362,7 +383,52 @@ function gameLoop() {
 }
 
 // Toetsenbord controls
-const keys = {};
+const keys = {
+    ArrowLeft: false,
+    ArrowRight: false,
+    ArrowUp: false,
+    leftBtn: false,
+    rightBtn: false,
+    jumpBtn: false
+};
+
+// Touch controls
+document.getElementById('leftBtn').addEventListener('touchstart', (e) => {
+    e.preventDefault();
+    keys.leftBtn = true;
+});
+document.getElementById('leftBtn').addEventListener('touchend', (e) => {
+    e.preventDefault();
+    keys.leftBtn = false;
+});
+
+document.getElementById('rightBtn').addEventListener('touchstart', (e) => {
+    e.preventDefault();
+    keys.rightBtn = true;
+});
+document.getElementById('rightBtn').addEventListener('touchend', (e) => {
+    e.preventDefault();
+    keys.rightBtn = false;
+});
+
+document.getElementById('jumpBtn').addEventListener('touchstart', (e) => {
+    e.preventDefault();
+    keys.jumpBtn = true;
+});
+document.getElementById('jumpBtn').addEventListener('touchend', (e) => {
+    e.preventDefault();
+    keys.jumpBtn = false;
+});
+
+// Start het spel bij een tap op het scherm
+document.addEventListener('touchstart', (e) => {
+    if (!gameStarted) {
+        gameStarted = true;
+        startBackgroundMusic();
+    }
+});
+
+// Toetsenbord controls
 window.addEventListener('keydown', e => {
     keys[e.key] = true;
     if (e.key === ' ' && !gameStarted) {
@@ -375,5 +441,9 @@ window.addEventListener('keyup', e => {
 });
 
 // Start het spel
-loadImages();
-gameLoop(); 
+window.addEventListener('load', () => {
+    resizeCanvas();
+    window.addEventListener('resize', resizeCanvas);
+    loadImages();
+    gameLoop();
+}); 
